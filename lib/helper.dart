@@ -45,28 +45,8 @@ class DatabaseHelper {
     return await db.query('history');
   }
 
-  // Future<int> updateItem(int id, String name, int quantity) async {
-  //   final db = await database;
-  //   return await db.update(
-  //     'items',
-  //     {'name': name, 'quantity': quantity},
-  //     where: 'id = ?',
-  //     whereArgs: [id],
-  //   );
-  // }
-
-  // Future<int> deleteItem(int id) async {
-  //   final db = await database;
-  //   return await db.delete(
-  //     'items',
-  //     where: 'id = ?',
-  //     whereArgs: [id],
-  //   );
-  // }
-
   Future<int> deleteAllHistory() async {
   final db = await database;
   return await db.delete('history'); // Deletes all rows in the table
 }
-
 }

@@ -1,5 +1,7 @@
 name: calculator
-description: "A new Flutter project."
+description: >
+  A simple and intuitive calculator app built using Flutter. 
+  Supports basic arithmetic operations with a clean and responsive UI.
 
 publish_to: 'none' 
 
@@ -17,12 +19,13 @@ dependencies:
   math_expressions: ^2.4.0
   flutter_launcher_icons: ^0.13.1
   sqflite: ^2.3.3+1
-  audioplayers: ^6.4.0
+  audioplayers: ^1.0.1
+  path: ^1.8.3
 
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/logo.png"
+  image_path: "assets/logo1.png"
 
 dev_dependencies:
   flutter_test:
