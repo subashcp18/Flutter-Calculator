@@ -6,6 +6,7 @@ import 'package:calculator/helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:math_expressions/math_expressions.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,6 +40,46 @@ class _MyHomePageState extends State<MyHomePage> {
   final player = AudioPlayer();
   DatabaseHelper db = DatabaseHelper();
 
+  int index = 0;
+
+  final List<Map<String, Color>> colorThemes = [
+    {
+      'buttonColor': Color(0xFFDCE0D9),
+      'buttonSecondary': Color(0xFFEAD7C3),
+      'backgroundColor': Color(0xFFFBF6EF),
+      'textColor': Colors.black,
+    },
+    {
+      'buttonColor': Color(0xFFDDBEA9),
+      'buttonSecondary': Color(0xFFCB997E),
+      'backgroundColor': Color(0xFFFFE8D6),
+      'textColor': Colors.white,
+    },
+    {
+      'buttonColor': Color(0xFFB8B8FF),
+      'buttonSecondary': Color(0xFF9381FF),
+      'backgroundColor': Color(0xFFF8F7FF),
+      'textColor': Colors.white,
+    },
+    {
+      'buttonColor': Color(0xFF14213D),
+      'buttonSecondary': Color(0xFFFCA311),
+      'backgroundColor': Color(0xFF000000),
+      'textColor': Colors.white,
+    },
+    {
+      'buttonColor': Color.fromRGBO(52, 28, 79, 1),
+      'buttonSecondary': Color.fromRGBO(88, 7, 125, 1),
+      'backgroundColor': Color.fromRGBO(22, 6, 40, 1),
+      'textColor': Colors.white,
+    }
+  ];
+
+  Color buttonColor = Color(0xFFDCE0D9);
+  Color buttonSecondary = Color(0xFFEAD7C3);
+  Color backgroundColor = Color(0xFFFBF6EF);
+  Color textColor = Colors.black87;
+
   final List<String> buttons = [
     'C',
     'DEL',
@@ -67,7 +108,23 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+    getSavedThemeIndex();
     fetchAllHistory();
+  }
+
+  Future<void> saveThemeIndex(int index) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('themeIndex', index);
+    print('Theme index $index saved');
+  }
+
+  void getSavedThemeIndex() async {
+    final prefs = await SharedPreferences.getInstance();
+    int index = prefs.getInt('themeIndex') ?? 4;
+    setState(() {
+      this.index = index;
+      setTheme(index);
+    });
   }
 
   void fetchAllHistory() async {
@@ -85,6 +142,13 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  void setTheme(int index) {
+    buttonColor = colorThemes[index]['buttonColor']!;
+    buttonSecondary = colorThemes[index]['buttonSecondary']!;
+    backgroundColor = colorThemes[index]['backgroundColor']!;
+    textColor = colorThemes[index]['textColor']!;
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
@@ -96,12 +160,12 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     final screen = MediaQuery.of(context).size;
     // final bgColor = Color.fromARGB(255, 208, 189, 243);
-    const bgColor = Color.fromRGBO(22, 6, 40, 1);
+    final bgColor = backgroundColor;
     return Scaffold(
         backgroundColor: bgColor,
         body: SafeArea(
           child: AnnotatedRegion(
-            value: const SystemUiOverlayStyle(
+            value: SystemUiOverlayStyle(
               statusBarColor: bgColor,
               systemNavigationBarColor: bgColor,
             ),
@@ -123,14 +187,17 @@ class _MyHomePageState extends State<MyHomePage> {
                         ),
                         Container(
                           padding: const EdgeInsets.all(20),
-                          alignment: Alignment.centerLeft,
+                          alignment: Alignment.centerRight,
                           child: SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             controller: _scrollController,
                             child: Text(
                               userQuestion,
-                              style: const TextStyle(
-                                  fontSize: 38, color: Colors.white),
+                              style: TextStyle(
+                                  fontSize: 38,
+                                  color: bgColor == Colors.black || bgColor == Color.fromRGBO(22, 6, 40, 1)
+                                      ? Colors.white
+                                      : Colors.black),
                               overflow: TextOverflow.visible,
                             ),
                           ),
@@ -140,33 +207,57 @@ class _MyHomePageState extends State<MyHomePage> {
                           alignment: Alignment.centerRight,
                           child: Text(
                             userAnswer,
-                            style: const TextStyle(
-                                fontSize: 30, color: Colors.white),
+                            style: TextStyle(
+                                fontSize: 30,
+                                color: bgColor == Colors.black || bgColor == Color.fromRGBO(22, 6, 40, 1)
+                                    ? Colors.white
+                                    : Colors.black),
                           ),
                         ),
-                        Row(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(
-                                  13.0, 0.0, 0.0, 10.0),
-                              child: GestureDetector(
+                        Padding(
+                          padding: const EdgeInsets.only(left: 25.0),
+                          child: Row(
+                            children: [
+                              GestureDetector(
                                 onTap: () {
                                   setState(() {
                                     history = !history;
                                   });
                                 },
-                                child: const Icon(
+                                child: Icon(
                                   Icons.history_rounded,
                                   size: 33,
-                                  color: Colors.white,
+                                  color: buttonSecondary,
                                 ),
                               ),
-                            ),
-                          ],
+                              SizedBox(
+                                width: 20.0,
+                              ),
+                              GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      if (index < colorThemes.length - 1) {
+                                        index++;
+                                        setTheme(index);
+                                        saveThemeIndex(index);
+                                      } else {
+                                        index = 0;
+                                        setTheme(index);
+                                        saveThemeIndex(index);
+                                      }
+                                    });
+                                  },
+                                  child: Icon(
+                                    Icons.color_lens_outlined,
+                                    size: 30,
+                                    color: buttonSecondary,
+                                  ))
+                            ],
+                          ),
                         ),
-                        const Divider(
-                          height: 3.5,
-                          color: Colors.white38,
+                        Divider(
+                          height: 0.5,
+                          color: buttonSecondary.withOpacity(0.2),
                         ),
                       ],
                     ),
@@ -196,7 +287,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 },
                                 buttonText: buttons[index],
                                 color: Colors.green,
-                                textcolor: Colors.white,
+                                textcolor: textColor,
                               );
                             } else if (index == 1) {
                               return MyButton(
@@ -209,7 +300,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 },
                                 buttonText: buttons[index],
                                 color: Colors.red,
-                                textcolor: Colors.white,
+                                textcolor: textColor,
                               );
                             } else if (index == buttons.length - 2) {
                               return MyButton(
@@ -225,8 +316,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                   });
                                 },
                                 buttonText: buttons[index],
-                                color: const Color.fromRGBO(52, 28, 79, 1),
-                                textcolor: Colors.white,
+                                // color: const Color.fromRGBO(52, 28, 79, 1),
+                                color: buttonColor,
+                                textcolor: textColor,
                               );
                             } else if (index == buttons.length - 1) {
                               return MyButton(
@@ -243,8 +335,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                   });
                                 },
                                 buttonText: buttons[index],
-                                color: const Color.fromRGBO(88, 7, 125, 1),
-                                textcolor: Colors.white,
+                                // color: const Color.fromRGBO(88, 7, 125, 1),
+                                color: buttonSecondary,
+                                textcolor: textColor,
                               );
                             } else {
                               return MyButton(
@@ -256,9 +349,11 @@ class _MyHomePageState extends State<MyHomePage> {
                                 },
                                 buttonText: buttons[index],
                                 color: isOperator(buttons[index])
-                                    ? const Color.fromRGBO(88, 7, 125, 1)
-                                    : const Color.fromRGBO(52, 28, 79, 1),
-                                textcolor: Colors.white,
+                                    ? buttonSecondary
+                                    : buttonColor,
+                                // ? const Color.fromRGBO(88, 7, 125, 1)
+                                // : const Color.fromRGBO(52, 28, 79, 1),
+                                textcolor: textColor,
                               );
                             }
                           },
@@ -273,12 +368,13 @@ class _MyHomePageState extends State<MyHomePage> {
                           margin: const EdgeInsets.only(
                               right: 0, top: 0, bottom: 0),
                           decoration: BoxDecoration(
-                            color: const Color.fromRGBO(88, 7, 125, 0.2),
+                            // color: const Color.fromRGBO(88, 7, 125, 0.2),
+                            color: buttonSecondary.withOpacity(0.2),
                             // color: Colors.deepPurple[180],
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               width: 1.0,
-                              color: Colors.white38,
+                              color: buttonSecondary.withOpacity(0.2),
                             ),
                           ),
                           child: ClipRRect(
@@ -317,12 +413,12 @@ class _MyHomePageState extends State<MyHomePage> {
                                       child: Container(
                                         width: double.infinity,
                                         height: 50,
-                                        color: Colors.deepPurple,
-                                        child: const Center(
+                                        color: buttonColor,
+                                        child: Center(
                                           child: Text(
                                             "Clear History",
                                             style: TextStyle(
-                                              color: Colors.white,
+                                              color: textColor,
                                               fontSize: 20,
                                             ),
                                           ),
@@ -386,10 +482,10 @@ class _MyHomePageState extends State<MyHomePage> {
               margin: const EdgeInsets.only(top: 8.0),
               child: Text(
                 question,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 20,
                     // color: Colors.black54
-                    color: Colors.white60),
+                    color: textColor.withOpacity(0.6)),
                 overflow: TextOverflow.clip,
                 textAlign: TextAlign.left,
               ),
@@ -399,15 +495,15 @@ class _MyHomePageState extends State<MyHomePage> {
               margin: const EdgeInsets.only(bottom: 5.0, top: 5.0),
               child: Text(
                 "= $answer",
-                style: const TextStyle(
-                    fontSize: 23, letterSpacing: 0.0, color: Colors.white),
+                style: TextStyle(
+                    fontSize: 23, letterSpacing: 0.0, color: textColor),
                 overflow: TextOverflow.clip,
                 textAlign: TextAlign.right,
               ),
             ),
-            const Divider(
+            Divider(
               height: 1.0,
-              color: Colors.white38,
+              color: textColor.withOpacity(0.2),
             ),
           ],
         ),
